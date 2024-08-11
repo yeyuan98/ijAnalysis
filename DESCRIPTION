@@ -1,0 +1,28 @@
+Package: ijAnalysis
+Title: Miscellaneous tools for image analysis tasks
+Version: 0.0.1
+Authors@R: 
+    person("Ye", "Yuan", , "yeyu@umich.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-9641-9102"))
+Description: A miscellaneous toolbox for various image analysis tasks. 
+    Initially contains tools for downstream analysis of my ImageJ plugin
+    Puncta Tracker and hence the ij name. Part of the y3628 analysis suite.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    y3628,
+    dplyr,
+    purrr,
+    reticulate,
+    rlang,
+    vctrs,
+    stringr,
+    jsonlite,
+    tibble,
+    readr,
+    utils,
+    ggplot2
+Depends: 
+    R (>= 4.1)
