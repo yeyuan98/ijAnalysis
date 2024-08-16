@@ -31,13 +31,12 @@ ctcf_read_csv <- function(path, ...){
 #'
 #' @examples
 #' # TODO
-ctcf_plot <- function(data, x, y, fill){
+ctcf_plot <- function(data, x, y, fill = NA){
   x <- rlang::enquo(x)
   y <- rlang::enquo(y)
-  if (rlang::is_missing(fill)){
+  fill <- rlang::enquo(fill)
+  if (rlang::as_label(fill) == "NA"){
     fill <- x
-  } else {
-    fill <- rlang::enquo(fill)
   }
 
   plot.boxPoint(data, x, y, fill)+

@@ -1,6 +1,6 @@
 Package: ijAnalysis
 Title: Miscellaneous tools for image analysis tasks
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: 
     person("Ye", "Yuan", , "yeyu@umich.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-9641-9102"))
@@ -12,7 +12,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
-    y3628,
+    y3628 (>= 0.0.2),
     dplyr,
     purrr,
     reticulate,
@@ -23,6 +23,11 @@ Imports:
     tibble,
     readr,
     utils,
-    ggplot2
+    ggplot2,
+    readxl,
+    damr,
+    ggetho,
+    behavr,
+    data.table
 Depends: 
     R (>= 4.1)

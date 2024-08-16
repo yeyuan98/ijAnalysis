@@ -4,7 +4,7 @@
 \alias{ctcf_plot}
 \title{Standardized plotting of CTCF data}
 \usage{
-ctcf_plot(data, x, y, fill)
+ctcf_plot(data, x, y, fill = NA)
 }
 \arguments{
 \item{data}{tibble of CTCF data}

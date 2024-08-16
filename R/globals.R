@@ -6,5 +6,7 @@ utils::globalVariables(c(
   # RoiPointsSaver, python
   c("saveRoiPoint"),
   # nnd.export
-  c("idx", "dist", "t.x", "t.y", "nnd", "spotIn.y")
+  c("idx", "dist", "t.x", "t.y", "nnd", "spotIn.y"),
+  # actogram
+  c("activity", "id")
 ))
