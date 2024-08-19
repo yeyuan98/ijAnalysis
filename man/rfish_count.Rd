@@ -4,12 +4,14 @@
 \alias{rfish_count}
 \title{Count number of dots per cell}
 \usage{
-rfish_count(samples, dots, ...)
+rfish_count(samples, dots, by = c("sample", "image"), ...)
 }
 \arguments{
 \item{samples}{tibble of samples table, \code{rfish_read_samples()}}
 
 \item{dots}{tibble of dots table, \code{rfish_read_dots()}}
+
+\item{by}{group by which variables before counting}
 
 \item{...}{<\code{\link[tidyselect:language]{tidy-select}}> extra columns (from samples table) to retain}
 }

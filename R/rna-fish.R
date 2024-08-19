@@ -49,6 +49,7 @@ rfish_read_samples <- function(path, ...){
 #'
 #' @param samples tibble of samples table, `rfish_read_samples()`
 #' @param dots tibble of dots table, `rfish_read_dots()`
+#' @param by group by which variables before counting
 #' @param ... <[`tidy-select`][tidyselect::language]> extra columns (from samples table) to retain
 #'
 #' @return Count table (number of dots per cell).
@@ -56,13 +57,19 @@ rfish_read_samples <- function(path, ...){
 #'
 #' @examples
 #' # TODO
-rfish_count <- function(samples, dots, ...){
-  df <- dplyr::left_join(samples, dots, by = c("sample", "image")) |>
-    dplyr::group_by(!!rlang::sym("sample"), !!rlang::sym("image")) |>
+rfish_count <- function(samples, dots, by = c("sample", "image"), ...){
+  # Symbolize the `by` grouping variables
+  by_syms <- rlang::syms(by)
+  sel_regex <- paste(c("num.cells", by), collapse = "|")
+  # Count
+  df <- dplyr::left_join(samples, dots, by = by) |>
+    dplyr::group_by(!!!by_syms) |>
     dplyr::summarise(num.dots = dplyr::n(), .groups = "drop")
+  # Recover sample information
   samples <-
-    samples |> dplyr::select(dplyr::matches("num.cells|sample|image"), ...)
-  df <- dplyr::left_join(df, samples, by = c("sample", "image"))
+    samples |> dplyr::select(dplyr::matches(sel_regex), ...)
+  df <- dplyr::left_join(df, samples, by = by)
+  # dots-per-cell
   df$dpc <- df$num.dots / df$num.cells
   return(df)
 }
