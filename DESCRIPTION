@@ -28,6 +28,7 @@ Imports:
     damr,
     ggetho,
     behavr,
-    data.table
+    data.table,
+    stats
 Depends: 
     R (>= 4.1)

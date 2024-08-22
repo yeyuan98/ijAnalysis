@@ -1,9 +1,28 @@
-# Plotting actogram
+# Plotting actogram and periodogram
 #   with damr and ggetho packages
 
-#' Read actogram metadata file
+#' Load behavior metadata
+#'
+#' @param path Path to metadata file. See body for column spec.
+#'
+#' @return Metadata tibble.
+#'
+#' @examples
+#' # Not exported.
+behavior_loadMetadata <- function(path){
+  reader <- y3628::flexTableReader(
+    col_names = c(
+      "file", "start_datetime", "stop_datetime",
+      "region_id", "genotype", "replicate"),
+    skip = 1
+  )
+  return(reader(path))
+}
+
+#' Load behavior activity data from metadata
 #'
 #' @param path Path to metadata, must be commonly used delimited or excel.
+#' @param data_dir Path to the behavior data dir.
 #' @inheritParams rlang::args_dots_empty
 #'
 #' @return `behavr::behavr` behavior data table.
@@ -11,17 +30,12 @@
 #'
 #' @examples
 #' # TODO
-actogram_loadFromMetadata <- function(path, ...){
+actogram_loadFromMetadata <- function(path, data_dir = "./", ...){
+
   rlang::check_dots_empty()
 
-  reader <- y3628::flexTableReader(
-    col_names = c(
-      "file", "start_datetime", "stop_datetime",
-      "region_id", "genotype", "replicate"),
-    skip = 1
-  )
-  metadata <- reader(path)
-  metadata <- damr::link_dam_metadata(metadata, result_dir = "./")
+  metadata <- behavior_loadMetadata(path)
+  metadata <- damr::link_dam_metadata(metadata, result_dir = data_dir)
   dt <- damr::load_dam(metadata)
   summary(dt)
   return(dt)
@@ -96,4 +110,51 @@ subset_behavr <- function(behavr, expr){
   data <- behavr[sel,]
   data.table::setkey(data, id)
   return(behavr::behavr(data, meta))
+}
+
+
+#' Load Clocklab periodogram batch export table
+#'
+#' @param data Path to the Clocklab periodogram csv export file.
+#' @param meta Path to the metadata file.
+#' @inheritParams rlang::args_dots_empty
+#'
+#' @return Periodogram table with metadata columns
+#' @export
+#'
+#' @examples
+#' # TODO
+periodogram_loadClocklab <- function(data, meta, ...){
+
+  rlang::check_dots_empty()
+  meta <- behavior_loadMetadata(meta)
+
+  # Load data
+  data <- readr::read_csv(data, show_col_types = FALSE)
+  if (length(data) > 4){
+    rlang::inform("Only main periodogram entry `1` will be used.")
+    data <- data[1:4]
+  }
+  supported_cols <- c("Filename", "Period 1", "Amplitude 1", "Chi^2 1")
+  if (any(names(data) != supported_cols))
+    rlang::abort("Please provide Clocklab chi-squared periodogram table data.")
+
+  # Tidy data
+  names(data) <- c("fn", "period", "amplitude", "chi.sq")
+  fn <- stringr::str_split(data$fn, "_", simplify = TRUE)
+  file <- paste0(fn[,1], ".txt")
+  region_id <- as.integer(fn[,2])
+  data <- cbind(
+    data.frame(file = file, region_id = region_id),
+    data[2:4]
+  )
+
+  # Join metadata columns and return
+  data <- dplyr::left_join(
+    meta, data, by = c("file", "region_id")
+  )
+  if (any(!stats::complete.cases(data)))
+    rlang::warn("Some metadata entries do not have periodogram data. NAs used.")
+
+  return(tibble::as_tibble(data))
 }
