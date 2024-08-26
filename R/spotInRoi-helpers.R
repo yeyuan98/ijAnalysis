@@ -1,3 +1,71 @@
+# Join metadata columns from other files
+#   Problem with the spotInRoi data: information incl. pixelSizes is not present
+
+#' Join spotInRoi data with metadata columns
+#'
+#' @param df spotInRoi data frame.
+#' @param df.meta metadata data frame.
+#' @param by columns to perform join
+#' @param ... <[`tidy-select`][dplyr::dplyr_tidy_select]> columns to select from the metadata data frame.
+#'
+#' @return spotInRoi data frame joined with metadata.
+#'
+#' @examples
+#' # Not exported
+spotInRoi_joinMeta <- function(df, df.meta, by, ...){
+  # Select metadata columns
+  metaSel <- function(meta, by, ...){
+    dplyr::select(meta, dplyr::all_of(by), ...)
+  }
+  df.meta <- metaSel(df.meta, by, ...)
+  # Join
+  result <- dplyr::left_join(
+    df, df.meta, by = by, relationship = "many-to-one", suffix = c("", ".meta")
+  )
+  return(result)
+}
+
+#' Add metadata column to spotInRoi data
+#'
+#' @param df spotInRoi table, see details.
+#' @param idMap identifier map table, see details.
+#' @param meta metadata table.
+#' @param ... <[`tidy-select`][dplyr::dplyr_tidy_select]> columns to select from the metadata table.
+#'
+#' @return spotInRoi data with the specified metadata columns.
+#' @export
+#'
+#' @details
+#' spotInRoi data here takes a generalized meaning - a data frame with two
+#' id columns $tp, $meas, plus any number of additional columns.
+#'
+#' The identifier map table must contain two id columns $tp, $meas, plus
+#' additional columns that are identifiers in the metadata table.
+#'
+#'
+#' @examples
+#' # TODO
+spotInRoi_addMeta <- function(df, idMap, meta, ...){
+  cols_sir <- c("tp", "meas")
+
+  # Get idMap metadata identifier columns
+  cols_idMap <- names(idMap)
+  cols_idMap <- cols_idMap[!(cols_idMap %in% cols_sir)]
+
+  # Join the idMap table
+  df <- df |>
+    dplyr::left_join(
+      idMap, by = cols_sir, relationship = "many-to-one")
+
+  # Join the metadata table
+  df <- spotInRoi_joinMeta(df, meta, cols_idMap, ...)
+
+  # Remove the idMap metadata ID columns and return
+  df <- df |>
+    dplyr::select(!dplyr::all_of(cols_idMap))
+  return(df)
+}
+
 # Parser helpers for NCT data
 #   NCT = data where there are two ROIs per plane
 #     one for whole cell, another for the nucleus
