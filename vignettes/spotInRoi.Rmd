@@ -1,0 +1,201 @@
+---
+title: "spotInRoi"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{spotInRoi}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# What is spotInRoi analysis
+
+spotInRoi (SIR) analysis is used to for:
+
+1. Counting 3D spots that position within given 2D region of interests (ROIs).
+2. Fetch 3D coordinate of spots and perform nearest neighbor distance (NND) calculation.
+
+A three-step workflow is designed for this analysis:
+
+1. Generate the spots and sample tables with [RNA-FISH pipeline][fish-analysis]. 
+2. Draw 2D ROIs to generate the SIR table with the [Puncta Tracker imageJ plugin][puncta-tracker].
+3. Count spots and (if needed) perform NND calculation with this package.
+
+[fish-analysis]: https://github.com/yeyuan98/rna_fish_analysis
+[puncta-tracker]: https://github.com/yeyuan98/punctaTracker
+
+This vignette describes Step#3 above in detail. A small example dataset is 
+included in this package.
+
+# The example dataset
+
+A sampled dataset is provided:
+
+<pre>
+├── fish-analysis
+│   ├── exon.csv
+│   ├── intron.csv
+│   └── samples.xlsx
+└── puncta-tracker
+    ├── metadata.csv
+    ├── spotInRoi_exonZ1X5I0.csv
+    └── spotInRoi_intronZ3X5I0.csv
+</pre>
+
+Spots and sample tables are under the `fish-analysis` folder while 
+SIR tables are under the `puncta-tracker` folder.
+
+In the PunctaTracker analysis, we have drawn two ROIs for each cell. The first 
+ROI of a cell always marks the nucleus boundary while the second always marks 
+the cell.
+
+# Workflow
+
+Below I showcase the following tasks:
+
+1. Count overall number of spots in each cell.
+2. Count number of spots in the nucleus and whole cell ROIs.
+3. Calculate NND to determine which exon spots colocalize with any intron.
+
+First, define all relevant paths and load packages.
+
+```{r}
+path.root <- system.file("extdata/rna-fish-example", package = "ijAnalysis")
+#   Paths of fish-analysis
+path.fish <- file.path(path.root, "fish-analysis")
+path.exon <- file.path(path.fish, "exon.csv")
+path.intron <- file.path(path.fish, "intron.csv")
+path.samples <- file.path(path.fish, "samples.xlsx")
+#   Paths of puncta tracker
+path.pt <- file.path(path.root, "puncta-tracker")
+path.meta <- file.path(path.pt, "metadata.csv")
+path.sirExon <- file.path(path.pt, "spotInRoi_exonZ1X5I0.csv")
+path.sirIntron <- file.path(path.pt, "spotInRoi_intronZ3X5I0.csv")
+```
+
+```{r}
+# Load package of course
+library(ijAnalysis)
+library(dplyr)
+library(ggplot2)
+```
+
+Next, showcase Task 1 & 2, which are somewhat simple.
+
+```{r}
+# Task 1 - Count number of spots in each cell and plot
+#   Load data and count
+samples <- rfish_read_samples(path.samples)
+dots.exon <- rfish_read_dots(path.exon)
+dots.intron <- rfish_read_dots(path.intron)
+df <- rbind(
+  rfish_count(samples, dots.exon) |> mutate(probe = "exon"),
+  rfish_count(samples, dots.intron) |> mutate(probe = "intron")
+)
+df <- df[df$num.cells > 0,]
+#   Arrange order and plot
+df$probe <- ordered(df$probe, levels = c("exon", "intron"))
+#     dataset have two samples CT4 and CT16
+df$sample <- ordered(df$sample, levels = c("CT4", "CT16"))
+#     plot X = sample, Y = dots-per-cell (dpc), color fill group = probe
+ctcf_plot(df, sample, dpc, probe)+
+  scale_y_continuous(limits = c(0,30), expand = c(0,.01))+
+  xlab("Time Point")+
+  ylab("Spots/cell")
+```
+
+```{r}
+# Task 2 -  Count number of exon spots in ROIs.
+#   read SIR table
+exon <- spotInRoi_read_csv(path.sirExon)
+#   count by cell
+exon <- exon |> 
+  group_by(tp, meas, plane) |> 
+  # get number of spots and percent nuclear
+  summarize(
+    n.nuc = spot.count[1], n.tot = spot.count[2], 
+    perc.nuc = n.nuc/n.tot*100, .groups = "drop")
+#   filter (must have valid data and at least 3 dots in cell ROI)
+exon <- exon[complete.cases(exon) & exon$n.tot >= 3,]
+#   plot X = tp, Y = perc.nuc (percent nuclear)
+exon$tp <- ordered(exon$tp, levels = c("CT4", "CT16"))
+ctcf_plot(exon, tp, perc.nuc)+
+  scale_y_continuous(limits = c(0, 105), expand = c(0,.01))+
+  xlab("Time Point")+
+  ylab("Perc. of nuclear exon spots/cell")
+```
+
+Task 3 is more complicated. We start by calculating NND values in pixel unit:
+
+```{r}
+# Task 3 - Calculate NND for each exon spot to intron spots.
+#   read SIR tables
+exon <- spotInRoi_read_csv(path.sirExon)
+intron <- spotInRoi_read_csv(path.sirIntron)
+#   select spots (here, select spots in the nucleus)
+exon <- spotInRoi_selectNCT(exon, nucleus)
+intron <- spotInRoi_selectNCT(intron, nucleus)
+#   join two SIR tables
+exon2intron <- inner_join(
+  x = exon |> select(tp, meas, plane, spotIn),
+  y = intron |> select(tp, meas, plane, spotIn),
+  by = c("tp", "meas", "plane")
+)
+#   compute NND
+nnd_compute <- 
+  # for each exon spot, take intron spots in 3 Z-frame proximity.
+  \(x,y) ij_nnd.compute(x, y, z.proximal = 3)
+exon2intron$result <- 
+  with(exon2intron, purrr::map2(spotIn.x, spotIn.y, nnd_compute))
+#   (optionally) sort spots by NND value in each cell (increasing order)
+exon2intron <- spotInRoi_nnd.sort(exon2intron)
+#   expand NND result table
+#     before: each row is a cell
+#     after: each row is a exon spot (w/ its NND values)
+exon2intron <- spotInRoi_as.data.frame.df.nnd(exon2intron)
+```
+
+Now, `exon2intron` is a data frame where each row is a exon spot with NND 
+intron values. However, the NND values `$nnd` are in pixel unit.
+
+To convert to physical unit, we need to fetch the physicalSizes columns that 
+are present only in the RNA-FISH pipeline outputs 
+(tables under folder `fish-analysis`):
+
+```{r}
+# Fetch physicalSizes columns
+exon2intron <- spotInRoi_addMeta(
+  df = exon2intron,
+  idMap = read.csv(path.meta),
+  meta = rfish_read_samples(path.samples),
+  starts_with("phys") # select physicalSizes columns
+)
+exon2intron$nnd <- exon2intron$nnd * exon2intron$physX * 1E3 # unit = nm
+exon2intron$colocalized <- exon2intron$nnd < 400 # cutoff = 400nm
+# Compute percent of exon spots colocalized to any intron
+exon2intron <- exon2intron |> 
+    group_by(tp, meas, plane) |> 
+    summarize(
+      n.total = n(), n.coloc = sum(colocalized), 
+      perc.coloc = n.coloc / n.total*100, .groups = "drop")
+# Plot, X = tp, Y = perc.coloc
+ctcf_plot(exon2intron, tp, perc.coloc)+
+  scale_y_continuous(limits = c(0,105), expand = c(0,.01))+
+  xlab("Time Point")+
+  ylab("Percent of colocalized exon spots/cell")
+```
+
+Notes:
+
+1. `z.proximal` parameter of `ij_nnd.compute` controls how NND is identified. 
+For a real dataset that adopted the `Z1X5I0` for exon and `Z3X5I0` for intron, 
+usually we use `z.proximal = 1.5` to find introns within 1.5 Z-frames of the 
+exon for calculating NND values in the XY plane. Here, `z.proximal = 3` is used 
+because the dataset is sampled and for some exon spots no intron spot could be 
+found within 1.5 Z-plane proximity.

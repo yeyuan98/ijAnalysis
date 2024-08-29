@@ -28,5 +28,8 @@ plot.boxPoint <- function(data, x, y, fill){
     ggplot2::theme_classic(base_size = 24)+
     ggplot2::theme(legend.position = "none")+
     ggplot2::theme(axis.line=ggplot2::element_line(size=0.5))+
-    ggplot2::theme(axis.ticks=ggplot2::element_line(size=0.5))
+    ggplot2::theme(axis.ticks=ggplot2::element_line(size=0.5, colour = "black"))+
+    ggplot2::theme(axis.text = ggplot2::element_text(colour = "black"))+
+    # The default tick length for base_size = 24 is 6points.
+    ggplot2::theme(axis.ticks.length = ggplot2::unit(10, "points"))
 }
