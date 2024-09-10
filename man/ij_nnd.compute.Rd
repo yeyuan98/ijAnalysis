@@ -14,7 +14,8 @@ ij_nnd.compute(foreach, to, z.proximal)
 \item{z.proximal}{Only spots in close enough z-proximity is computed.}
 }
 \value{
-\code{y3628::metaRcrd} object storing the NND results.
+\code{y3628::metaRcrd} object storing the NND results. For spots that have
+no Z-proximal spots in the \code{to} spot set, NAs are returned.
 }
 \description{
 Compute NND metrics for a pair of spot sets.

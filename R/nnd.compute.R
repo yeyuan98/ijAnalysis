@@ -6,7 +6,8 @@
 #' @param to compute its distance to the nearest neighbor in `to` spot set.
 #' @param z.proximal Only spots in close enough z-proximity is computed.
 #'
-#' @return `y3628::metaRcrd` object storing the NND results.
+#' @return `y3628::metaRcrd` object storing the NND results. For spots that have
+#' no Z-proximal spots in the `to` spot set, NAs are returned.
 #' @export
 #'
 #' @examples
@@ -46,10 +47,20 @@ ij_nnd.compute <- function(foreach, to, z.proximal){
     dist[dist_z > z.proximal] <- NA
     # Get nearest neighbor
     nnd.which <- which.min(dist)
-    nnd.t.x[i] <- t.x[nnd.which]
-    nnd.t.y[i] <- t.y[nnd.which]
-    nnd.t.idx[i] <- t.idx[nnd.which]
-    nnd.val[i] <- min(dist, na.rm = TRUE)
+    # Fetch field values of nearest neighbor
+    if (length(nnd.which) == 0){
+      # No spot in Z-proximity; all NAs after filtering
+      nnd.t.x[i] <- NA_real_
+      nnd.t.y[i] <- NA_real_
+      nnd.t.idx[i] <- NA_integer_
+      nnd.val[i] <- NA_real_
+    } else{
+      # Fetch the neighbor value
+      nnd.t.x[i] <- t.x[nnd.which]
+      nnd.t.y[i] <- t.y[nnd.which]
+      nnd.t.idx[i] <- t.idx[nnd.which]
+      nnd.val[i] <- min(dist, na.rm = TRUE)
+    }
   }
 
   # Return
