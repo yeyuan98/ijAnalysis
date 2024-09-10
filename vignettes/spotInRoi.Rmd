@@ -141,6 +141,8 @@ intron <- spotInRoi_read_csv(path.sirIntron)
 #   select spots (here, select spots in the nucleus)
 exon <- spotInRoi_selectNCT(exon, nucleus)
 intron <- spotInRoi_selectNCT(intron, nucleus)
+#   remove entries that show no exon spots
+exon <- exon |> filter(spot.count > 0)
 #   join two SIR tables
 exon2intron <- inner_join(
   x = exon |> select(tp, meas, plane, spotIn),
