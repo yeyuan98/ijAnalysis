@@ -78,6 +78,17 @@ spotInRoi_addMeta <- function(df, idMap, meta, ...){
 #' @return Subsetted spotInRoi nuclear/full-cell data.
 #' @export
 #'
+#' @details
+#' # Subset defaults
+#'
+#' Predefined subsetting rules are as follows:
+#'
+#' `nuclear` - for each cell select the ROI with the smallest `equi.D`
+#'
+#' `full` - for each cell select the ROI with the largest `equi.D`
+#'
+#' `cytoplasm` - currently not implemented and will error.
+#'
 #' @examples
 #' # TODO
 spotInRoi_selectNCT <- function(dfNucCyt, what){

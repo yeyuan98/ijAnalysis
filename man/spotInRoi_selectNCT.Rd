@@ -17,6 +17,16 @@ Subsetted spotInRoi nuclear/full-cell data.
 \description{
 Predefined subsetting of spotInRoi nuclear/full-cell data.
 }
+\section{Subset defaults}{
+Predefined subsetting rules are as follows:
+
+\code{nuclear} - for each cell select the ROI with the smallest \code{equi.D}
+
+\code{full} - for each cell select the ROI with the largest \code{equi.D}
+
+\code{cytoplasm} - currently not implemented and will error.
+}
+
 \examples{
 # TODO
 }
