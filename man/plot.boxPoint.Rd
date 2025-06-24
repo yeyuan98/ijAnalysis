@@ -2,9 +2,9 @@
 % Please edit documentation in R/plot.R
 \name{plot.boxPoint}
 \alias{plot.boxPoint}
-\title{Boxplot with data points, viridis_d color filled}
+\title{Boxplot with data points}
 \usage{
-\method{plot}{boxPoint}(data, x, y, fill)
+\method{plot}{boxPoint}(data, x, y, fill, theme = "classic")
 }
 \arguments{
 \item{data}{Data}
@@ -14,12 +14,14 @@
 \item{y}{y, must be already quoted}
 
 \item{fill}{fill, must be already quoted}
+
+\item{theme}{what theme to apply, see \code{plot.themes()}.}
 }
 \value{
 ggplot object
 }
 \description{
-Boxplot with data points, viridis_d color filled
+Boxplot with data points
 }
 \examples{
 # Internal use

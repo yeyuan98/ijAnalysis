@@ -8,5 +8,7 @@ utils::globalVariables(c(
   # nnd.export
   c("idx", "dist", "t.x", "t.y", "nnd", "spotIn.y"),
   # actogram
-  c("activity", "id")
+  c("activity", "id"),
+  # plot
+  c("sd")
 ))

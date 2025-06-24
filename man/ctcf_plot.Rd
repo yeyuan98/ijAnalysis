@@ -4,7 +4,7 @@
 \alias{ctcf_plot}
 \title{Standardized plotting of CTCF data}
 \usage{
-ctcf_plot(data, x, y, fill = NA)
+ctcf_plot(data, x, y, fill = NA, template = "boxPoint")
 }
 \arguments{
 \item{data}{tibble of CTCF data}
@@ -14,13 +14,29 @@ ctcf_plot(data, x, y, fill = NA)
 \item{y}{y-axis variable for plotting}
 
 \item{fill}{fill variable for plotting}
+
+\item{template}{which template to use, see details.}
 }
 \value{
 ggplot object
 }
 \description{
-Standardized plotting of CTCF data
+This is de facto the versatile X-Y plot generator of this package. Supports
+multiple plot templates.
+}
+\details{
+All possible templates are not exported functions \code{plot.} in this package.
+Supported ones are:
+\itemize{
+\item \code{"linePoint"} - uses \code{plot.linePoint()} - point plot with summary line
+\item \code{"boxPoint"} - uses \code{plot.boxPoint()} - point plot with box
+}
 }
 \examples{
-# TODO
+# Will warn about the `am` continuous color variable
+ctcf_plot(mtcars, cyl, mpg, am, template = "linePoint")
+# Will create a boxPoint plot. Note that for boxPoint X must be discrete.
+ctcf_plot(
+mtcars |> dplyr::mutate(gear = as.character(gear), am = as.character(am)),
+am, mpg, gear)
 }
